@@ -50,6 +50,7 @@
 - 2026-02-15: System Controller Step 7 complete (audio manager + /api/v1/audio).
 - 2026-02-15: System Controller Step 8 complete (guarded reboot/shutdown endpoints).
 - 2026-02-15: System Controller Step 9 complete (docs hardening + deployment + dev tools).
+- 2026-02-15: System Controller documentation pass (API, architecture, usage, testing).
 
 ## Verification Results
 - Build (pio run via .venv): SUCCESS
