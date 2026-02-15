@@ -51,6 +51,7 @@
 - 2026-02-15: System Controller Step 8 complete (guarded reboot/shutdown endpoints).
 - 2026-02-15: System Controller Step 9 complete (docs hardening + deployment + dev tools).
 - 2026-02-15: System Controller documentation pass (API, architecture, usage, testing).
+- 2026-02-15: System Controller Step 10 complete (release lock + v1.0.0-system-controller-green tag).
 
 ## Verification Results
 - Build (pio run via .venv): SUCCESS
