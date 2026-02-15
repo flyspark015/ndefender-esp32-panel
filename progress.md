@@ -15,10 +15,8 @@ Step 4: VRX control + RSSI ADC sampling + telemetry vrx list.
 Step 4 verification: telemetry includes vrx list with freq_hz and rssi_raw (user log confirmed).
 Step 5: Non-blocking scan/lock engine.
 Step 5 verification: firmware flashed (user confirmed).
-
-## [IN-PROGRESS] In Progress
-Step 6: Video switch control + telemetry video.selected (code updated, awaiting flash + verification).
-UART auto-detection logic added to tools/python_serial_tester.py (awaiting validation with new firmware).
+Step 6: Video switch control + telemetry video.selected.
+Step 6 verification: VIDEO_SELECT command_ack and telemetry video.selected=2 (tool output confirmed).
 
 ## [PENDING] Pending
 Step 7: OLED debug display (live status, last RX/TX, mode).
@@ -26,7 +24,7 @@ Step 8: Tools + tests + CI hardening.
 Step 9: Final green report.
 
 ## Current Focus
-Awaiting Step 6 flash + verification on hardware (VIDEO_SELECT ack + telemetry video.selected).
+Awaiting Step 7 implementation (OLED debug display).
 
 ## Execution Log
 2026-02-15: Step 1 completed; build verified; flash verified; telemetry verified.
@@ -34,7 +32,7 @@ Awaiting Step 6 flash + verification on hardware (VIDEO_SELECT ack + telemetry v
 2026-02-15: Step 3 verified via SET_LEDS command_ack + telemetry LED block.
 2026-02-15: Step 4 verified via telemetry vrx list (user log).
 2026-02-15: Step 5 flashed (user confirmed).
-2026-02-15: Step 6 code prepared; automated upload failed (chip stopped responding). Manual flash required.
+2026-02-15: Step 6 verified via VIDEO_SELECT command_ack and telemetry update.
 2026-02-15: UART auto-detection logic implemented and tested for port listing.
 
 ## Verification Results
@@ -45,4 +43,4 @@ Command ACK (GET_STATUS): SUCCESS (tool output confirmed)
 Command ACK (SET_LEDS) + telemetry LED: SUCCESS (tool output confirmed)
 Step 4 telemetry (vrx list): SUCCESS (user log confirmed)
 Step 5 flash: SUCCESS (user confirmed)
-Step 6 upload: FAILED via PlatformIO (chip stopped responding). Manual flash required.
+Step 6 VIDEO_SELECT: SUCCESS (tool output confirmed)
