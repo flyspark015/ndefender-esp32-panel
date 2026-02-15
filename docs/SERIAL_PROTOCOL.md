@@ -82,6 +82,7 @@ All commands MUST include:
 ```json
 {"id":"<string>","cmd":"<COMMAND>","args":{}}
 ```
+The firmware accepts fields inside `args` and searches the JSON line for keys (e.g. `vrx_id`, `freq_hz`).
 
 ### Required Commands
 
