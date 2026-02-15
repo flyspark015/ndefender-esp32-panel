@@ -17,16 +17,15 @@ Step 5: Non-blocking scan/lock engine.
 Step 5 verification: firmware flashed (user confirmed).
 Step 6: Video switch control + telemetry video.selected.
 Step 6 verification: VIDEO_SELECT command_ack and telemetry video.selected=2 (tool output confirmed).
-
-## [IN-PROGRESS] In Progress
-Step 7: OLED debug display (live status, last RX/TX, mode) (code updated, awaiting flash + verification).
+Step 7: OLED debug display (live status, last RX/TX, mode).
+Step 7 verification: OLED shows mode, TX/RX age, VRX freq/RSSI, last cmd (user confirmed).
 
 ## [PENDING] Pending
 Step 8: Tools + tests + CI hardening.
 Step 9: Final green report.
 
 ## Current Focus
-Awaiting Step 7 flash + verification on hardware.
+Awaiting Step 8 implementation (tools/tests/CI hardening).
 
 ## Execution Log
 2026-02-15: Step 1 completed; build verified; flash verified; telemetry verified.
@@ -36,7 +35,7 @@ Awaiting Step 7 flash + verification on hardware.
 2026-02-15: Step 5 flashed (user confirmed).
 2026-02-15: Step 6 verified via VIDEO_SELECT command_ack and telemetry update.
 2026-02-15: UART auto-detection logic implemented and tested for port listing.
-2026-02-15: Step 7 code prepared; automated upload failed (chip stopped responding). Manual flash required.
+2026-02-15: Step 7 verified via OLED confirmation (user log).
 
 ## Verification Results
 Build (pio run via .venv): SUCCESS
@@ -47,4 +46,4 @@ Command ACK (SET_LEDS) + telemetry LED: SUCCESS (tool output confirmed)
 Step 4 telemetry (vrx list): SUCCESS (user log confirmed)
 Step 5 flash: SUCCESS (user confirmed)
 Step 6 VIDEO_SELECT: SUCCESS (tool output confirmed)
-Step 7 upload: FAILED via PlatformIO (chip stopped responding). Manual flash required.
+Step 7 OLED: SUCCESS (user confirmed)
