@@ -1,6 +1,28 @@
 # N-Defender ESP32 Panel Firmware
 
-ESP32 firmware for VRX control, RSSI sampling, LED status, OLED debug display, and analog video switch control. The ESP32 communicates with the Raspberry Pi via newline-delimited JSON over USB serial.
+ESP32 firmware that controls VRX modules, reads RSSI via ADC, drives LEDs, and renders a debug OLED screen. Communication with the Raspberry Pi is via newline-delimited JSON over USB serial.
+
+## Folder Structure
+
+- `esp32_firmware/` PlatformIO firmware project
+  - `include/config.h` Pin mapping and configuration options
+  - `src/main.cpp` Firmware entrypoint and core loop
+  - `src/baseline_import.cpp` Baseline reference (build excluded)
+
+## Required Libraries
+
+These are declared in `esp32_firmware/platformio.ini`:
+
+- `adafruit/Adafruit GFX Library@1.12.4`
+- `adafruit/Adafruit BusIO@1.17.4`
+- `adafruit/Adafruit SSD1327@1.0.4`
+
+## Build Environment Requirements
+
+- Python 3.9+ (for PlatformIO)
+- PlatformIO CLI (`pip install platformio`)
+- USB drivers for ESP32-S3
+- A compatible ESP32-S3 board (default: `esp32-s3-devkitc-1`)
 
 ## Build
 
@@ -16,9 +38,26 @@ cd esp32_firmware
 pio run -t upload --upload-port <PORT>
 ```
 
-## Repo Layout
+## Configuration Options
 
-- `esp32_firmware/` PlatformIO firmware project
-- `docs/` Protocol + hardware docs
-- `tools/` Host tools
-- `tests/` Protocol parser tests
+Edit `esp32_firmware/include/config.h` to adjust:
+
+- `SERIAL_BAUD`, `TELEMETRY_INTERVAL_MS`
+- LED pins (locked defaults)
+- OLED I2C pins and clock
+- VRX control pins and RSSI pins
+- Video switch placeholders (board-specific)
+
+## How To Verify It Is Running
+
+1. Open a serial monitor at 115200 baud.
+2. Expect a 1 Hz telemetry heartbeat.
+3. OLED (if connected) shows boot banner and live status.
+
+Example telemetry lines:
+
+```json
+{"type":"telemetry","timestamp_ms":1000,"sel":1,"led":{"r":0,"y":0,"g":1},"sys":{"uptime_ms":1000,"heap":123456}}
+{"type":"telemetry","timestamp_ms":2000,"sel":1,"led":{"r":0,"y":0,"g":1},"sys":{"uptime_ms":2000,"heap":123456}}
+{"type":"telemetry","timestamp_ms":3000,"sel":1,"led":{"r":0,"y":0,"g":1},"sys":{"uptime_ms":3000,"heap":123456}}
+```
