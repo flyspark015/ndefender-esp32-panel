@@ -70,6 +70,7 @@ Video switch placeholders (board-specific):
 5. Send `START_SCAN` and confirm `vrx[].freq_hz` changes over time.
 6. Send `LOCK_STRONGEST` and confirm scanning stops and the best frequency is held.
 7. Send `VIDEO_SELECT` and confirm telemetry `video.selected` updates.
+8. Confirm OLED shows mode, TX/RX age, VRX freq/RSSI, and last command status.
 
 Example telemetry lines:
 

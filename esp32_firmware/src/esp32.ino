@@ -77,6 +77,20 @@ static char rxLine[SERIAL_MAX_LINE];
 static size_t rxLen = 0;
 static bool rxDrop = false;
 
+static char last_cmd[SERIAL_MAX_CMD] = {0};
+static char last_err[32] = {0};
+static bool last_cmd_ok = true;
+static uint32_t last_cmd_ms = 0;
+
+enum RunMode {
+  MODE_IDLE = 0,
+  MODE_SCAN = 1,
+  MODE_LOCK = 2,
+  MODE_MANUAL = 3
+};
+
+static RunMode run_mode = MODE_IDLE;
+
 struct VrxState {
   uint8_t id;
   uint8_t lePin;
@@ -227,6 +241,32 @@ static void setLEDs(bool r, bool y, bool g) {
   digitalWrite(PIN_LED_GREEN, g ? HIGH : LOW);
 }
 
+static const char *modeName(RunMode m) {
+  switch (m) {
+    case MODE_SCAN: return "SCAN";
+    case MODE_LOCK: return "LOCK";
+    case MODE_MANUAL: return "MAN";
+    default: return "IDLE";
+  }
+}
+
+static void noteCommand(const char *cmd, bool ok, const char *err) {
+  if (cmd && cmd[0] != '\0') {
+    strncpy(last_cmd, cmd, sizeof(last_cmd) - 1);
+    last_cmd[sizeof(last_cmd) - 1] = '\0';
+  } else {
+    last_cmd[0] = '\0';
+  }
+  last_cmd_ok = ok;
+  if (err && err[0] != '\0') {
+    strncpy(last_err, err, sizeof(last_err) - 1);
+    last_err[sizeof(last_err) - 1] = '\0';
+  } else {
+    last_err[0] = '\0';
+  }
+  last_cmd_ms = millis();
+}
+
 static void applyVideoSelect(int ch) {
   if (ch < 1 || ch > 3) {
     return;
@@ -261,28 +301,52 @@ static void drawStatus() {
   const uint32_t now = millis();
   const uint32_t tx_age = (lastTxMs == 0) ? 0 : (now - lastTxMs);
   const uint32_t rx_age = (lastRxMs == 0) ? 0 : (now - lastRxMs);
+  char line[32];
 
   display.setCursor(0, 0);
-  display.println("Status: HEARTBEAT");
-  display.print("Uptime: ");
-  display.print(now);
-  display.println(" ms");
-  display.print("Last TX: ");
-  display.print(tx_age);
-  display.println(" ms");
-  display.print("Last RX: ");
-  display.print(rx_age);
-  display.println(" ms");
+  display.print("MODE ");
+  display.print(modeName(run_mode));
+  display.print(" VID ");
+  display.println(video_selected);
 
-  display.print("LED RYG: ");
-  display.print(led_r ? 1 : 0);
-  display.print(led_y ? 1 : 0);
-  display.println(led_g ? 1 : 0);
+  display.setCursor(0, 12);
+  snprintf(line, sizeof(line), "TX %lus RX %lus", tx_age / 1000, rx_age / 1000);
+  display.println(line);
 
-  display.print("RX Err/Ov: ");
-  display.print(rxErrors);
-  display.print("/");
-  display.println(rxOverflow);
+  display.setCursor(0, 24);
+  snprintf(line, sizeof(line), "ERR %lu/%lu", rxErrors, rxOverflow);
+  display.println(line);
+
+  display.setCursor(0, 36);
+  snprintf(line, sizeof(line), "V1 %lu %u", (unsigned long)(vrx[0].freq_hz / 1000000ULL), vrx[0].rssi_raw);
+  display.println(line);
+
+  display.setCursor(0, 48);
+  snprintf(line, sizeof(line), "V2 %lu %u", (unsigned long)(vrx[1].freq_hz / 1000000ULL), vrx[1].rssi_raw);
+  display.println(line);
+
+  display.setCursor(0, 60);
+  snprintf(line, sizeof(line), "V3 %lu %u", (unsigned long)(vrx[2].freq_hz / 1000000ULL), vrx[2].rssi_raw);
+  display.println(line);
+
+  display.setCursor(0, 72);
+  display.print("CMD ");
+  if (last_cmd[0] == '\0') {
+    display.print("-");
+  } else {
+    display.print(last_cmd);
+  }
+  display.print(last_cmd_ok ? " OK" : " ER");
+
+  display.setCursor(0, 84);
+  if (last_err[0] != '\0') {
+    display.print("ERR ");
+    display.print(last_err);
+  } else {
+    display.print("UP ");
+    display.print(now / 1000);
+    display.print("s");
+  }
 
   display.display();
 }
@@ -363,6 +427,7 @@ static void sendCommandAck(const char *id, const char *cmd, bool ok, const char 
   Serial.print("}");
   Serial.println();
   lastTxMs = ms;
+  noteCommand(cmd, ok, err);
 }
 
 static bool jsonFindStringField(const char *line, const char *key, char *out, size_t out_len) {
@@ -556,6 +621,7 @@ static void dispatchCommand(const char *id, const char *cmd, const char *line) {
     const int idx = vrx_id - 1;
     vrx[idx].freq_hz = static_cast<uint64_t>(freq_hz);
     vrxTuneHz(vrx[idx].lePin, vrx[idx].freq_hz);
+    run_mode = MODE_MANUAL;
     sendCommandAck(id, cmd, true, "");
     return;
   }
@@ -584,11 +650,13 @@ static void dispatchCommand(const char *id, const char *cmd, const char *line) {
               static_cast<uint64_t>(step_hz),
               static_cast<uint64_t>(start_hz),
               static_cast<uint64_t>(stop_hz));
+    run_mode = MODE_SCAN;
     sendCommandAck(id, cmd, true, "");
     return;
   }
   if (strcmp(cmd, "STOP_SCAN") == 0) {
     stopScan();
+    run_mode = MODE_IDLE;
     sendCommandAck(id, cmd, true, "");
     return;
   }
@@ -624,6 +692,7 @@ static void dispatchCommand(const char *id, const char *cmd, const char *line) {
       sendCommandAck(id, cmd, false, "no_best");
       return;
     }
+    run_mode = MODE_LOCK;
     sendCommandAck(id, cmd, true, "");
     return;
   }
