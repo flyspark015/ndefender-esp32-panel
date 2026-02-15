@@ -20,12 +20,14 @@ Step 6 verification: VIDEO_SELECT command_ack and telemetry video.selected=2 (to
 Step 7: OLED debug display (live status, last RX/TX, mode).
 Step 7 verification: OLED shows mode, TX/RX age, VRX freq/RSSI, last cmd (user confirmed).
 
+## [IN-PROGRESS] In Progress
+Step 8: Tools + tests + CI hardening (tests added, awaiting review/acceptance).
+
 ## [PENDING] Pending
-Step 8: Tools + tests + CI hardening.
 Step 9: Final green report.
 
 ## Current Focus
-Awaiting Step 8 implementation (tools/tests/CI hardening).
+Awaiting Step 8 acceptance; tests and CI updates completed.
 
 ## Execution Log
 2026-02-15: Step 1 completed; build verified; flash verified; telemetry verified.
@@ -36,6 +38,7 @@ Awaiting Step 8 implementation (tools/tests/CI hardening).
 2026-02-15: Step 6 verified via VIDEO_SELECT command_ack and telemetry update.
 2026-02-15: UART auto-detection logic implemented and tested for port listing.
 2026-02-15: Step 7 verified via OLED confirmation (user log).
+2026-02-15: Step 8 tests added and passed locally.
 
 ## Verification Results
 Build (pio run via .venv): SUCCESS
@@ -47,3 +50,4 @@ Step 4 telemetry (vrx list): SUCCESS (user log confirmed)
 Step 5 flash: SUCCESS (user confirmed)
 Step 6 VIDEO_SELECT: SUCCESS (tool output confirmed)
 Step 7 OLED: SUCCESS (user confirmed)
+Step 8 pytest: SUCCESS (4 passed)

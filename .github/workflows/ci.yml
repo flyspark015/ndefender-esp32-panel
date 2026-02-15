@@ -19,3 +19,7 @@ jobs:
       - name: Build firmware
         run: pio run
         working-directory: esp32_firmware
+      - name: Install test deps
+        run: pip install pytest
+      - name: Run tests
+        run: pytest -q
