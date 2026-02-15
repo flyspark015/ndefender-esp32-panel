@@ -196,9 +196,75 @@ static bool jsonFindStringField(const char *line, const char *key, char *out, si
   return true;
 }
 
+static bool jsonFindIntField(const char *line, const char *key, int *out) {
+  if (!line || !key || !out) {
+    return false;
+  }
+
+  char pattern[32];
+  const size_t key_len = strlen(key);
+  if (key_len + 3 >= sizeof(pattern)) {
+    return false;
+  }
+  pattern[0] = '\"';
+  memcpy(pattern + 1, key, key_len);
+  pattern[key_len + 1] = '\"';
+  pattern[key_len + 2] = '\0';
+
+  const char *p = strstr(line, pattern);
+  if (!p) {
+    return false;
+  }
+  p += strlen(pattern);
+  while (*p && isspace(static_cast<unsigned char>(*p))) {
+    ++p;
+  }
+  if (*p != ':') {
+    return false;
+  }
+  ++p;
+  while (*p && isspace(static_cast<unsigned char>(*p))) {
+    ++p;
+  }
+  bool neg = false;
+  if (*p == '-') {
+    neg = true;
+    ++p;
+  }
+  if (!isdigit(static_cast<unsigned char>(*p))) {
+    return false;
+  }
+  int value = 0;
+  while (isdigit(static_cast<unsigned char>(*p))) {
+    value = value * 10 + (*p - '0');
+    ++p;
+  }
+  *out = neg ? -value : value;
+  return true;
+}
+
 static void dispatchCommand(const char *id, const char *cmd, const char *line) {
   (void)line;
   if (strcmp(cmd, "GET_STATUS") == 0) {
+    sendCommandAck(id, cmd, true, "");
+    return;
+  }
+  if (strcmp(cmd, "SET_LEDS") == 0) {
+    int r = 0;
+    int y = 0;
+    int g = 0;
+    const bool has_r = jsonFindIntField(line, "r", &r);
+    const bool has_y = jsonFindIntField(line, "y", &y);
+    const bool has_g = jsonFindIntField(line, "g", &g);
+    if (!has_r || !has_y || !has_g) {
+      sendCommandAck(id, cmd, false, "missing_args");
+      return;
+    }
+    if ((r != 0 && r != 1) || (y != 0 && y != 1) || (g != 0 && g != 1)) {
+      sendCommandAck(id, cmd, false, "args_oob");
+      return;
+    }
+    setLEDs(r == 1, y == 1, g == 1);
     sendCommandAck(id, cmd, true, "");
     return;
   }
@@ -206,8 +272,7 @@ static void dispatchCommand(const char *id, const char *cmd, const char *line) {
       strcmp(cmd, "START_SCAN") == 0 ||
       strcmp(cmd, "STOP_SCAN") == 0 ||
       strcmp(cmd, "LOCK_STRONGEST") == 0 ||
-      strcmp(cmd, "VIDEO_SELECT") == 0 ||
-      strcmp(cmd, "SET_LEDS") == 0) {
+      strcmp(cmd, "VIDEO_SELECT") == 0) {
     sendCommandAck(id, cmd, false, "not_implemented");
     return;
   }
