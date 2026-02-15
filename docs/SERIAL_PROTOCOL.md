@@ -4,7 +4,7 @@
 
 Transport: USB serial, newline-delimited JSON (one JSON object per line). Each line must be valid JSON and end with `\n`.
 
-Default baud: `115200` (configurable in `esp32_firmware/include/config.h`).
+Default baud: `115200` (configurable in `esp32_firmware/src/esp32.ino`).
 
 Key rules:
 - Every message must be valid JSON and terminated by `\n`.
@@ -47,7 +47,7 @@ Schema:
 
 Notes:
 - `rssi_raw` is required. `rssi_dbm_est` is optional (future).
-- `vrx[]` and `video` will be populated in later phases.
+- `vrx[]` and `video` are populated in the current firmware.
 
 ### Command Ack
 
@@ -94,7 +94,7 @@ Args:
 #### START_SCAN
 Args:
 ```json
-{"profile":"string","dwell_ms":80,"step_hz":2000000,"start_hz":5645000000,"stop_hz":5945000000}
+{"profile":"string","dwell_ms":200,"step_hz":2000000,"start_hz":5645000000,"stop_hz":5865000000}
 ```
 
 #### STOP_SCAN
@@ -108,6 +108,7 @@ Args:
 ```json
 {"vrx_id": 1}
 ```
+If `vrx_id` is omitted, the strongest for all VRX channels is locked.
 
 #### VIDEO_SELECT
 Args:
@@ -135,11 +136,16 @@ Args:
 - `args_oob`
 - `unknown_cmd`
 - `not_implemented`
+- `vrx_id_oob`
+- `freq_oob`
+- `dwell_oob`
+- `range_oob`
+- `no_best`
+- `ch_oob`
 
 ## Current Implementation Status
 
-- Implemented: `GET_STATUS`, `SET_LEDS`, robust framing, `command_ack` for all commands.
-- Not implemented yet (planned): `SET_VRX_FREQ`, `START_SCAN`, `STOP_SCAN`, `LOCK_STRONGEST`, `VIDEO_SELECT`.
+- Implemented: `GET_STATUS`, `SET_LEDS`, `SET_VRX_FREQ`, `START_SCAN`, `STOP_SCAN`, `LOCK_STRONGEST`, `VIDEO_SELECT`.
 
 ## Examples
 

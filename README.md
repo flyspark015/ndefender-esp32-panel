@@ -2,12 +2,28 @@
 
 ESP32 firmware that controls VRX modules, reads RSSI via ADC, drives LEDs, and renders a debug OLED screen. Communication with the Raspberry Pi is via newline-delimited JSON over USB serial.
 
+## Capabilities
+
+Current firmware capabilities:
+- Robust serial framing and command ACK for every command
+- VRX tuning with `SET_VRX_FREQ`
+- RSSI sampling (ADC) per VRX
+- Non-blocking scan engine (`START_SCAN` / `STOP_SCAN`)
+- Lock strongest signal (`LOCK_STRONGEST`)
+- Video switch control (`VIDEO_SELECT`)
+- LED control (`SET_LEDS`)
+- OLED debug display (mode, TX/RX age, VRX freq/RSSI, last command status)
+
+See `docs/SERIAL_PROTOCOL.md` for full API details.
+
 ## Folder Structure
 
 - `esp32_firmware/` Firmware package
   - `src/esp32.ino` Single-file Arduino sketch (complete firmware)
   - `README.md` Firmware-specific setup and verification guide
 - `firmware.md` Firmware package guide and setup instructions
+- `docs/SERIAL_PROTOCOL.md` Serial API reference
+- `tools/python_serial_tester.py` UART auto-detection and test tool
 
 ## Required Libraries
 
@@ -40,7 +56,7 @@ pio run -t upload --upload-port <PORT>
 
 ## Configuration Options
 
-Edit `esp32_firmware/include/config.h` to adjust:
+Edit constants at the top of `esp32_firmware/src/esp32.ino` to adjust:
 
 - `SERIAL_BAUD`, `TELEMETRY_INTERVAL_MS`
 - LED pins (locked defaults)

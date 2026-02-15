@@ -19,15 +19,14 @@ Step 6: Video switch control + telemetry video.selected.
 Step 6 verification: VIDEO_SELECT command_ack and telemetry video.selected=2 (tool output confirmed).
 Step 7: OLED debug display (live status, last RX/TX, mode).
 Step 7 verification: OLED shows mode, TX/RX age, VRX freq/RSSI, last cmd (user confirmed).
-
-## [IN-PROGRESS] In Progress
-Step 8: Tools + tests + CI hardening (tests added, awaiting review/acceptance).
+Step 8: Tools + tests + CI hardening.
+Step 8 verification: pytest passed locally; CI updated to run tests.
 
 ## [PENDING] Pending
 Step 9: Final green report.
 
 ## Current Focus
-Awaiting Step 8 acceptance; tests and CI updates completed.
+Awaiting Step 9 final report.
 
 ## Execution Log
 2026-02-15: Step 1 completed; build verified; flash verified; telemetry verified.
