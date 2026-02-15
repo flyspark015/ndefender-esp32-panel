@@ -4,11 +4,8 @@ ESP32 firmware that controls VRX modules, reads RSSI via ADC, drives LEDs, and r
 
 ## Folder Structure
 
-- `esp32_firmware/` PlatformIO firmware project
-  - `include/config.h` Pin mapping and configuration options
-  - `src/main.cpp` Firmware entrypoint and core loop
-  - `src/baseline_import.cpp` Baseline reference (build excluded)
-  - `esp32.ino` Arduino IDE entrypoint (mirrors `main.cpp`)
+- `esp32_firmware/` Firmware package
+  - `src/esp32.ino` Single-file Arduino sketch (complete firmware)
 - `firmware.md` Firmware package guide and setup instructions
 
 ## Required Libraries

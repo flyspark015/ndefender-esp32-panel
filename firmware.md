@@ -2,59 +2,51 @@
 
 ## Purpose
 
-This firmware provides the ESP32 hardware control layer for the N-Defender system. It drives LEDs, controls VRX modules, reads RSSI via ADC, renders a debug OLED screen, and communicates with the Raspberry Pi using newline-delimited JSON over USB serial.
+This firmware provides the ESP32 hardware control layer for the N-Defender system. It drives LEDs, renders a debug OLED screen, and communicates with the Raspberry Pi using newline-delimited JSON over USB serial.
 
-## Package Contents
+## Single-File Sketch
 
-- `esp32_firmware/src/main.cpp` PlatformIO entrypoint (primary build target).
-- `esp32_firmware/include/config.h` Pin and firmware configuration.
-- `esp32_firmware/esp32.ino` Arduino IDE friendly entrypoint (same logic as `main.cpp`).
-- `docs/SERIAL_PROTOCOL.md` Production serial protocol reference.
+All firmware logic lives in a single Arduino sketch file:
+
+- `esp32_firmware/src/esp32.ino`
+
+No additional `.h` or `.cpp` files are required.
 
 ## Required Libraries (Arduino)
 
-Install these libraries if building with Arduino IDE:
+Install these libraries via `Tools > Manage Libraries`:
 
 - `Adafruit GFX Library` version 1.12.4
 - `Adafruit BusIO` version 1.17.4
 - `Adafruit SSD1327` version 1.0.4
 
-## Build Environment Requirements (PlatformIO)
+## Arduino IDE Setup
 
-- Python 3.9+
-- PlatformIO CLI
-- ESP32-S3 USB drivers
+1. Install the ESP32 board package in Arduino IDE:
+   - `Tools > Board > Boards Manager`.
+   - Search for `esp32` by Espressif Systems.
+   - Install the latest stable version.
+2. Select the board:
+   - `Tools > Board > ESP32 Arduino > ESP32S3 Dev Module`
+3. Set the serial port:
+   - `Tools > Port > <your ESP32 port>`
+4. Set serial speed:
+   - `Tools > Serial Monitor > 115200`
 
-## PlatformIO Build
+## Build and Flash
 
-```bash
-cd esp32_firmware
-pio run
-```
-
-## PlatformIO Flash
-
-```bash
-cd esp32_firmware
-pio run -t upload --upload-port <PORT>
-```
-
-## Arduino IDE Build
-
-1. Open `esp32_firmware/esp32.ino`.
-2. Select board `ESP32S3 Dev Module`.
-3. Set the serial speed to `115200`.
-4. Install the libraries listed above.
-5. Build and upload.
+1. Open `esp32_firmware/src/esp32.ino`.
+2. Click `Verify` to compile.
+3. Click `Upload` to flash.
 
 ## Configuration Options
 
-Edit `esp32_firmware/include/config.h`:
+Edit constants at the top of `esp32.ino`:
 
 - `SERIAL_BAUD` and `TELEMETRY_INTERVAL_MS`
 - LED pins (locked defaults)
 - OLED I2C pins and clock
-- VRX control pins and RSSI pins
+- VRX pin placeholders
 - Video switch placeholders
 
 ## Verification Checklist

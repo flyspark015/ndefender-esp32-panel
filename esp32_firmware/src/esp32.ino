@@ -3,8 +3,54 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1327.h>
 
-#include "include/config.h"
+/*
+  N-Defender ESP32 Panel Firmware (Single-File Arduino Sketch)
+  Target: ESP32-S3-DevKitC-1-N8R2
 
+  Features (current phase):
+  - 1 Hz telemetry heartbeat
+  - Robust serial framing + command ACK
+  - SET_LEDS command
+  - OLED debug banner + status
+
+  Notes:
+  - No buzzer, no buttons/joystick, no microSD logging.
+  - VRX control, scan/lock, and video switching will be added in later phases.
+*/
+
+/* ===================== CONFIG ===================== */
+#define FW_VERSION "0.1.0"
+#define FW_BUILD_TIME __DATE__ " " __TIME__
+
+static const uint32_t SERIAL_BAUD = 115200;
+static const uint32_t TELEMETRY_INTERVAL_MS = 1000;
+static const uint32_t OLED_I2C_HZ = 400000;
+
+static const size_t SERIAL_MAX_LINE = 512;
+static const size_t SERIAL_MAX_ID = 64;
+static const size_t SERIAL_MAX_CMD = 64;
+
+// LED wiring (locked)
+static const uint8_t PIN_LED_RED = 16;
+static const uint8_t PIN_LED_YELLOW = 15;
+static const uint8_t PIN_LED_GREEN = 7;
+
+// OLED (SSD1327 128x96 I2C)
+static const uint8_t PIN_OLED_SDA = 13;
+static const uint8_t PIN_OLED_SCL = 12;
+
+// VRX wiring placeholders (for later phases)
+static const uint8_t PIN_VRX_DATA = 3;
+static const uint8_t PIN_VRX_CLK = 5;
+static const uint8_t PIN_VRX1_LE = 4;
+static const uint8_t PIN_VRX1_RSSI = 8;
+
+// Video switch placeholders (board-specific)
+static const uint8_t PIN_VIDEO_SEL_1 = 20;
+static const uint8_t PIN_VIDEO_SEL_2 = 21;
+static const uint8_t PIN_VIDEO_SEL_3 = 47;
+
+/* ===================== GLOBALS ===================== */
 static Adafruit_SSD1327 display(128, 96, &Wire, -1);
 static bool oled_ok = false;
 
@@ -24,6 +70,7 @@ static char rxLine[SERIAL_MAX_LINE];
 static size_t rxLen = 0;
 static bool rxDrop = false;
 
+/* ===================== HELPERS ===================== */
 static void setLEDs(bool r, bool y, bool g) {
   led_r = r;
   led_y = y;
@@ -342,6 +389,7 @@ static void serialPoll() {
   }
 }
 
+/* ===================== Arduino Entry ===================== */
 void setup() {
   Serial.begin(SERIAL_BAUD);
   delay(50);
