@@ -41,6 +41,7 @@
 - 2026-02-15: UART auto-detection logic implemented and tested for port listing.
 - 2026-02-15: Step 7 verified via OLED confirmation (user log).
 - 2026-02-15: Step 8 tests added and passed locally.
+- 2026-02-15: System Controller Step 1 complete (skeleton app + CI + minimal endpoints verified).
 
 ## Verification Results
 - Build (pio run via .venv): SUCCESS
