@@ -43,6 +43,7 @@
 - 2026-02-15: Step 8 tests added and passed locally.
 - 2026-02-15: System Controller Step 1 complete (skeleton app + CI + minimal endpoints verified).
 - 2026-02-15: System Controller Step 2 complete (supervisor state store + scheduler + WS fan-out).
+- 2026-02-15: System Controller Step 3 complete (system stats module + /api/v1/system).
 
 ## Verification Results
 - Build (pio run via .venv): SUCCESS
