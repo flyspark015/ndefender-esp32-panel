@@ -1,34 +1,28 @@
-# ESP32 Serial Protocol (Production Reference)
+# 📡 ESP32 Serial Protocol (Production Reference)
 
 ## Overview
-
-Transport: USB serial, newline-delimited JSON (one JSON object per line). Each line must be valid JSON and end with `\n`.
+Transport: USB serial, newline-delimited JSON (one JSON per line). Each line must end with `\n`.
 
 Default baud: `115200` (configurable in `esp32_firmware/src/esp32.ino`).
 
 Key rules:
-- Every message must be valid JSON and terminated by `\n`.
-- `timestamp_ms` is an integer (milliseconds since boot).
-- `freq_hz` is in Hertz (never MHz).
-- Every command must receive a `command_ack` response.
+- Valid JSON per line, terminated by `\n`.
+- `timestamp_ms` is integer milliseconds since boot.
+- `freq_hz` is always in Hertz.
+- Every command returns a `command_ack`.
 
 ## Framing & Parsing
-
-- The ESP32 reads serial data byte-by-byte and splits on newline.
-- Carriage returns (`\r`) are ignored.
-- Overlong lines are dropped and counted as errors.
-- Non-JSON lines are rejected with an error counter increment.
+- Byte-by-byte serial parsing
+- Overlong lines dropped, error counters incremented
+- Keys are searched in the line; `args` object is accepted but not required
 
 ## Common Fields
+- `type`: message type (`telemetry`, `command_ack`, `log_event`)
+- `timestamp_ms`: integer milliseconds since boot
 
-- `type`: string identifying message type (`telemetry`, `command_ack`, `log_event`).
-- `timestamp_ms`: integer timestamp in milliseconds since boot.
-
-## ESP32 -> Pi Messages
+## ESP32 → Pi Messages
 
 ### Telemetry
-
-Schema:
 ```json
 {
   "type": "telemetry",
@@ -45,13 +39,7 @@ Schema:
 }
 ```
 
-Notes:
-- `rssi_raw` is required. `rssi_dbm_est` is optional (future).
-- `vrx[]` and `video` are populated in the current firmware.
-
 ### Command Ack
-
-Schema:
 ```json
 {
   "type": "command_ack",
@@ -59,78 +47,53 @@ Schema:
   "id": "<same id>",
   "ok": true,
   "err": null,
-  "data": {"optional": "object"}
+  "data": {"cmd": "<COMMAND>"}
 }
 ```
 
-### Log Event (optional)
-
-Schema:
-```json
-{
-  "type": "log_event",
-  "timestamp_ms": 123456,
-  "level": "info|warn|error",
-  "msg": "string",
-  "data": {"optional": "object"}
-}
-```
-
-## Pi -> ESP32 Commands
-
+## Pi → ESP32 Commands
 All commands MUST include:
 ```json
 {"id":"<string>","cmd":"<COMMAND>","args":{}}
 ```
-The firmware accepts fields inside `args` and searches the JSON line for keys (e.g. `vrx_id`, `freq_hz`).
 
-### Required Commands
-
-#### SET_VRX_FREQ
-Args:
+### SET_VRX_FREQ
 ```json
-{"vrx_id": 1, "freq_hz": 5740000000}
+{"id":"1","cmd":"SET_VRX_FREQ","args":{"vrx_id":1,"freq_hz":5740000000}}
 ```
 
-#### START_SCAN
-Args:
+### START_SCAN
 ```json
-{"profile":"string","dwell_ms":200,"step_hz":2000000,"start_hz":5645000000,"stop_hz":5865000000}
+{"id":"2","cmd":"START_SCAN","args":{"dwell_ms":200,"step_hz":2000000,"start_hz":5645000000,"stop_hz":5865000000}}
 ```
 
-#### STOP_SCAN
-Args:
+### STOP_SCAN
 ```json
-{}
+{"id":"3","cmd":"STOP_SCAN","args":{}}
 ```
 
-#### LOCK_STRONGEST
-Args:
+### LOCK_STRONGEST
 ```json
-{"vrx_id": 1}
+{"id":"4","cmd":"LOCK_STRONGEST","args":{"vrx_id":1}}
 ```
-If `vrx_id` is omitted, the strongest for all VRX channels is locked.
+If `vrx_id` is omitted, all VRXs are locked to their strongest.
 
-#### VIDEO_SELECT
-Args:
+### VIDEO_SELECT
 ```json
-{"ch": 1}
+{"id":"5","cmd":"VIDEO_SELECT","args":{"ch":2}}
 ```
 
-#### SET_LEDS
-Args:
+### SET_LEDS
 ```json
-{"r":1,"y":0,"g":1}
+{"id":"6","cmd":"SET_LEDS","args":{"r":1,"y":0,"g":1}}
 ```
 
-#### GET_STATUS
-Args:
+### GET_STATUS
 ```json
-{}
+{"id":"7","cmd":"GET_STATUS","args":{}}
 ```
 
-## Error Codes (Ack `err` field)
-
+## Error Codes (`err` field)
 - `missing_id`
 - `missing_cmd`
 - `missing_args`
@@ -143,19 +106,3 @@ Args:
 - `range_oob`
 - `no_best`
 - `ch_oob`
-
-## Current Implementation Status
-
-- Implemented: `GET_STATUS`, `SET_LEDS`, `SET_VRX_FREQ`, `START_SCAN`, `STOP_SCAN`, `LOCK_STRONGEST`, `VIDEO_SELECT`.
-
-## Examples
-
-Command:
-```json
-{"id":"1","cmd":"SET_LEDS","args":{"r":1,"y":0,"g":1}}
-```
-
-Ack:
-```json
-{"type":"command_ack","timestamp_ms":1234,"id":"1","ok":true,"err":null,"data":{"cmd":"SET_LEDS"}}
-```

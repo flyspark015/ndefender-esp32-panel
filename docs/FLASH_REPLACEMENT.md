@@ -1,8 +1,16 @@
-# Flash Replacement
+# 🔄 Flash Replacement
 
-This `esp32_firmware/` folder is the new final firmware for the N-Defender ESP32 panel. After flashing, the old firmware is replaced.
+This `esp32_firmware/` folder is the final production firmware for the N-Defender ESP32 panel.
+Flashing it replaces any previous firmware on the device.
 
-Verification after flashing:
-- Confirm telemetry JSON lines are streaming over serial (1 Hz heartbeat).
-- Confirm OLED shows boot banner and live status (if connected).
-- Confirm LEDs show expected initial state (green on at boot).
+## Flash Steps
+1. Open `esp32_firmware/src/esp32.ino` in Arduino IDE.
+2. Select board: `ESP32S3 Dev Module`.
+3. Select the correct serial port.
+4. Click **Upload**.
+
+## Verification After Flash
+- Telemetry JSON lines appear at 1 Hz over serial.
+- OLED shows boot banner + live status (if connected).
+- LEDs respond to `SET_LEDS` command.
+

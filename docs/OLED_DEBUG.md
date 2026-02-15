@@ -1,11 +1,16 @@
-# OLED Debug Display
+# 🖥 OLED Debug Display
 
-The OLED is used only as a lightweight debug screen. Firmware must continue operating if the OLED is missing or fails to initialize.
+The OLED is used as a lightweight, non-blocking debug screen.
+If the OLED is missing or fails to initialize, the system continues running normally.
 
-Planned content:
-- Boot banner (firmware version + build time)
-- Serial link status (last RX/TX age)
-- Current mode (IDLE / SCAN / LOCK / MANUAL)
-- Selected video channel
-- VRX1/2/3 frequency + RSSI
-- Last command name + ok/fail
+## Display Content
+- Mode (IDLE / SCAN / LOCK / MAN)
+- Video selection
+- TX/RX age
+- RX error counters
+- VRX frequencies and RSSI
+- Last command + OK/ER status
+
+## Notes
+- Update interval is non-blocking.
+- OLED shows the system is alive and responding to commands.
