@@ -13,9 +13,8 @@ Step 3: Stable telemetry schema + SET_LEDS command.
 Step 3 verification: SET_LEDS command_ack and telemetry LED block confirmed.
 Step 4: VRX control + RSSI ADC sampling + telemetry vrx list.
 Step 4 verification: telemetry includes vrx list with freq_hz and rssi_raw (user log confirmed).
-
-## [IN-PROGRESS] In Progress
-Step 5: Non-blocking scan/lock engine (code updated, awaiting flash + verification).
+Step 5: Non-blocking scan/lock engine.
+Step 5 verification: firmware flashed (user confirmed).
 
 ## [PENDING] Pending
 Step 6: Video switch control + telemetry video.selected.
@@ -24,14 +23,14 @@ Step 8: Tools + tests + CI hardening.
 Step 9: Final green report.
 
 ## Current Focus
-Awaiting Step 5 flash + verification on hardware.
+Awaiting Step 6 implementation (video switch control).
 
 ## Execution Log
 2026-02-15: Step 1 completed; build verified; flash verified; telemetry verified.
 2026-02-15: Step 2 verified via GET_STATUS command_ack.
 2026-02-15: Step 3 verified via SET_LEDS command_ack + telemetry LED block.
 2026-02-15: Step 4 verified via telemetry vrx list (user log).
-2026-02-15: Step 5 code prepared; automated upload failed (serial noise). Manual flash required.
+2026-02-15: Step 5 flashed (user confirmed).
 
 ## Verification Results
 Build (pio run via .venv): SUCCESS
@@ -40,4 +39,4 @@ Serial telemetry: SUCCESS (user log confirmed)
 Command ACK (GET_STATUS): SUCCESS (tool output confirmed)
 Command ACK (SET_LEDS) + telemetry LED: SUCCESS (tool output confirmed)
 Step 4 telemetry (vrx list): SUCCESS (user log confirmed)
-Step 5 upload: FAILED via PlatformIO (serial noise). Manual flash required.
+Step 5 flash: SUCCESS (user confirmed)
