@@ -15,6 +15,7 @@
 - Step 7: OLED debug display (live status, last RX/TX, mode)
 - Step 8: Tools + tests + CI hardening
 - Step 9: Final green report
+- API documentation: production-ready ESP32 system API reference
 
 ## Current Focus
 - Awaiting verification outputs for Steps 1–3.
