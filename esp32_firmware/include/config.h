@@ -9,6 +9,9 @@
 // Serial
 constexpr uint32_t SERIAL_BAUD = 115200;
 constexpr uint32_t TELEMETRY_INTERVAL_MS = 1000;
+constexpr size_t SERIAL_MAX_LINE = 512;
+constexpr size_t SERIAL_MAX_ID = 64;
+constexpr size_t SERIAL_MAX_CMD = 64;
 
 // LEDs (locked wiring)
 constexpr uint8_t PIN_LED_RED = 16;
