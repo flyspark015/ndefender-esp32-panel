@@ -3,12 +3,12 @@
 ## Overall Completion
 - Estimated completion: 33%
 
-## ✅ Completed
+## [DONE] Completed
 - Step 1: Repo skeleton + PlatformIO project + 1 Hz telemetry heartbeat
 - Step 2: Robust serial framing + command dispatcher + COMMAND_ACK
 - Step 3: Stable telemetry schema + SET_LEDS command
 
-## ⏳ Pending
+## [PENDING] Pending
 - Step 4: VRX control + RSSI ADC sampling + telemetry vrx list
 - Step 5: Non-blocking scan/lock engine
 - Step 6: Video switch control + telemetry video.selected
