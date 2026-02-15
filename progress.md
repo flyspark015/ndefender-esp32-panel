@@ -42,6 +42,7 @@
 - 2026-02-15: Step 7 verified via OLED confirmation (user log).
 - 2026-02-15: Step 8 tests added and passed locally.
 - 2026-02-15: System Controller Step 1 complete (skeleton app + CI + minimal endpoints verified).
+- 2026-02-15: System Controller Step 2 complete (supervisor state store + scheduler + WS fan-out).
 
 ## Verification Results
 - Build (pio run via .venv): SUCCESS
