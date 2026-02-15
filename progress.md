@@ -16,14 +16,16 @@ Step 4 verification: telemetry includes vrx list with freq_hz and rssi_raw (user
 Step 5: Non-blocking scan/lock engine.
 Step 5 verification: firmware flashed (user confirmed).
 
+## [IN-PROGRESS] In Progress
+Step 6: Video switch control + telemetry video.selected (code updated, awaiting flash + verification).
+
 ## [PENDING] Pending
-Step 6: Video switch control + telemetry video.selected.
 Step 7: OLED debug display (live status, last RX/TX, mode).
 Step 8: Tools + tests + CI hardening.
 Step 9: Final green report.
 
 ## Current Focus
-Awaiting Step 6 implementation (video switch control).
+Awaiting Step 6 flash + verification on hardware.
 
 ## Execution Log
 2026-02-15: Step 1 completed; build verified; flash verified; telemetry verified.
@@ -31,6 +33,7 @@ Awaiting Step 6 implementation (video switch control).
 2026-02-15: Step 3 verified via SET_LEDS command_ack + telemetry LED block.
 2026-02-15: Step 4 verified via telemetry vrx list (user log).
 2026-02-15: Step 5 flashed (user confirmed).
+2026-02-15: Step 6 code prepared; automated upload failed (chip stopped responding). Manual flash required.
 
 ## Verification Results
 Build (pio run via .venv): SUCCESS
@@ -40,3 +43,4 @@ Command ACK (GET_STATUS): SUCCESS (tool output confirmed)
 Command ACK (SET_LEDS) + telemetry LED: SUCCESS (tool output confirmed)
 Step 4 telemetry (vrx list): SUCCESS (user log confirmed)
 Step 5 flash: SUCCESS (user confirmed)
+Step 6 upload: FAILED via PlatformIO (chip stopped responding). Manual flash required.

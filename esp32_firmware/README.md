@@ -69,6 +69,7 @@ Video switch placeholders (board-specific):
 4. Send a `SET_VRX_FREQ` command and confirm `command_ack` and telemetry updates.
 5. Send `START_SCAN` and confirm `vrx[].freq_hz` changes over time.
 6. Send `LOCK_STRONGEST` and confirm scanning stops and the best frequency is held.
+7. Send `VIDEO_SELECT` and confirm telemetry `video.selected` updates.
 
 Example telemetry lines:
 
@@ -84,6 +85,12 @@ Example scan commands:
 {"id":"10","cmd":"START_SCAN","args":{"dwell_ms":200,"step_hz":2000000,"start_hz":5645000000,"stop_hz":5865000000}}
 {"id":"11","cmd":"LOCK_STRONGEST","args":{}}
 {"id":"12","cmd":"STOP_SCAN","args":{}}
+```
+
+Example video select command:
+
+```json
+{"id":"20","cmd":"VIDEO_SELECT","args":{"ch":2}}
 ```
 
 ## Suggestions for Production Hardening (Planned)

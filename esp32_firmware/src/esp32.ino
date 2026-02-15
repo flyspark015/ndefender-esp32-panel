@@ -71,6 +71,7 @@ static uint32_t rxOverflow = 0;
 static bool led_r = false;
 static bool led_y = false;
 static bool led_g = false;
+static int video_selected = 1;
 
 static char rxLine[SERIAL_MAX_LINE];
 static size_t rxLen = 0;
@@ -226,6 +227,16 @@ static void setLEDs(bool r, bool y, bool g) {
   digitalWrite(PIN_LED_GREEN, g ? HIGH : LOW);
 }
 
+static void applyVideoSelect(int ch) {
+  if (ch < 1 || ch > 3) {
+    return;
+  }
+  video_selected = ch;
+  digitalWrite(PIN_VIDEO_SEL_1, ch == 1 ? HIGH : LOW);
+  digitalWrite(PIN_VIDEO_SEL_2, ch == 2 ? HIGH : LOW);
+  digitalWrite(PIN_VIDEO_SEL_3, ch == 3 ? HIGH : LOW);
+}
+
 static void drawBootBanner() {
   display.clearDisplay();
   display.setTextSize(1);
@@ -298,6 +309,9 @@ static void sendTelemetry() {
     }
   }
   Serial.print("]");
+  Serial.print(",\"video\":{\"selected\":");
+  Serial.print(video_selected);
+  Serial.print("}");
   Serial.print(",\"led\":{\"r\":");
   Serial.print(led_r ? 1 : 0);
   Serial.print(",\"y\":");
@@ -614,7 +628,21 @@ static void dispatchCommand(const char *id, const char *cmd, const char *line) {
     return;
   }
   if (strcmp(cmd, "VIDEO_SELECT") == 0) {
-    sendCommandAck(id, cmd, false, "not_implemented");
+    int ch = 0;
+    bool has_ch = jsonFindIntField(line, "ch", &ch);
+    if (!has_ch) {
+      has_ch = jsonFindIntField(line, "sel", &ch);
+    }
+    if (!has_ch) {
+      sendCommandAck(id, cmd, false, "missing_args");
+      return;
+    }
+    if (ch < 1 || ch > 3) {
+      sendCommandAck(id, cmd, false, "ch_oob");
+      return;
+    }
+    applyVideoSelect(ch);
+    sendCommandAck(id, cmd, true, "");
     return;
   }
 
@@ -700,6 +728,10 @@ void setup() {
   pinMode(PIN_VRX2_LE, OUTPUT);
   pinMode(PIN_VRX3_LE, OUTPUT);
 
+  pinMode(PIN_VIDEO_SEL_1, OUTPUT);
+  pinMode(PIN_VIDEO_SEL_2, OUTPUT);
+  pinMode(PIN_VIDEO_SEL_3, OUTPUT);
+
   digitalWrite(PIN_VRX_DATA, LOW);
   digitalWrite(PIN_VRX_CLK, LOW);
   digitalWrite(PIN_VRX1_LE, LOW);
@@ -717,6 +749,8 @@ void setup() {
   if (oled_ok) {
     drawBootBanner();
   }
+
+  applyVideoSelect(1);
 
   for (int i = 0; i < 3; i++) {
     vrxInit(vrx[i].lePin);
