@@ -47,6 +47,7 @@
 - 2026-02-15: System Controller Step 4 complete (UPS HAT E module + keepalive + /api/v1/ups).
 - 2026-02-15: System Controller Step 5 complete (systemd services manager + restart guard + /api/v1/services).
 - 2026-02-15: System Controller Step 6 complete (network manager + /api/v1/network).
+- 2026-02-15: System Controller Step 7 complete (audio manager + /api/v1/audio).
 
 ## Verification Results
 - Build (pio run via .venv): SUCCESS
