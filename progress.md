@@ -18,6 +18,7 @@ Step 5 verification: firmware flashed (user confirmed).
 
 ## [IN-PROGRESS] In Progress
 Step 6: Video switch control + telemetry video.selected (code updated, awaiting flash + verification).
+UART auto-detection logic added to tools/python_serial_tester.py (awaiting validation with new firmware).
 
 ## [PENDING] Pending
 Step 7: OLED debug display (live status, last RX/TX, mode).
@@ -25,7 +26,7 @@ Step 8: Tools + tests + CI hardening.
 Step 9: Final green report.
 
 ## Current Focus
-Awaiting Step 6 flash + verification on hardware.
+Awaiting Step 6 flash + verification on hardware (VIDEO_SELECT ack + telemetry video.selected).
 
 ## Execution Log
 2026-02-15: Step 1 completed; build verified; flash verified; telemetry verified.
@@ -34,6 +35,7 @@ Awaiting Step 6 flash + verification on hardware.
 2026-02-15: Step 4 verified via telemetry vrx list (user log).
 2026-02-15: Step 5 flashed (user confirmed).
 2026-02-15: Step 6 code prepared; automated upload failed (chip stopped responding). Manual flash required.
+2026-02-15: UART auto-detection logic implemented and tested for port listing.
 
 ## Verification Results
 Build (pio run via .venv): SUCCESS
