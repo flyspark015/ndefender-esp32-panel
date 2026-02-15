@@ -24,6 +24,7 @@
 
 static const uint32_t SERIAL_BAUD = 115200;
 static const uint32_t TELEMETRY_INTERVAL_MS = 1000;
+static const uint32_t RSSI_INTERVAL_MS = 120;
 static const uint32_t OLED_I2C_HZ = 400000;
 
 static const size_t SERIAL_MAX_LINE = 512;
@@ -44,6 +45,10 @@ static const uint8_t PIN_VRX_DATA = 3;
 static const uint8_t PIN_VRX_CLK = 5;
 static const uint8_t PIN_VRX1_LE = 4;
 static const uint8_t PIN_VRX1_RSSI = 8;
+static const uint8_t PIN_VRX2_LE = 10;
+static const uint8_t PIN_VRX2_RSSI = 14;
+static const uint8_t PIN_VRX3_LE = 11;
+static const uint8_t PIN_VRX3_RSSI = 9;
 
 // Video switch placeholders (board-specific)
 static const uint8_t PIN_VIDEO_SEL_1 = 20;
@@ -58,6 +63,7 @@ static uint32_t lastTelemetryMs = 0;
 static uint32_t lastOledMs = 0;
 static uint32_t lastTxMs = 0;
 static uint32_t lastRxMs = 0;
+static uint32_t lastRssiMs = 0;
 
 static uint32_t rxErrors = 0;
 static uint32_t rxOverflow = 0;
@@ -69,6 +75,76 @@ static bool led_g = false;
 static char rxLine[SERIAL_MAX_LINE];
 static size_t rxLen = 0;
 static bool rxDrop = false;
+
+struct VrxState {
+  uint8_t id;
+  uint8_t lePin;
+  uint8_t rssiPin;
+  uint64_t freq_hz;
+  uint16_t rssi_raw;
+};
+
+static VrxState vrx[3] = {
+  {1, PIN_VRX1_LE, PIN_VRX1_RSSI, 5740000000ULL, 0},
+  {2, PIN_VRX2_LE, PIN_VRX2_RSSI, 5800000000ULL, 0},
+  {3, PIN_VRX3_LE, PIN_VRX3_RSSI, 5860000000ULL, 0},
+};
+
+static inline void clkPulse() {
+  digitalWrite(PIN_VRX_CLK, HIGH);
+  delayMicroseconds(1);
+  digitalWrite(PIN_VRX_CLK, LOW);
+  delayMicroseconds(1);
+}
+
+static inline void sendBit(uint8_t b) {
+  digitalWrite(PIN_VRX_DATA, b ? HIGH : LOW);
+  clkPulse();
+}
+
+static void vrxWriteReg(uint8_t le, uint8_t addr4, uint32_t data20) {
+  addr4 &= 0x0F;
+  data20 &= 0xFFFFF;
+  const uint32_t packet = (data20 << 5) | (1UL << 4) | addr4;
+
+  digitalWrite(le, LOW);
+  for (int i = 0; i < 25; i++) {
+    sendBit((packet >> i) & 1U);
+  }
+  digitalWrite(le, HIGH);
+  delayMicroseconds(2);
+  digitalWrite(le, LOW);
+  delayMicroseconds(80);
+}
+
+static uint32_t synthWordFromMhz(uint32_t rf_mhz) {
+  int lo = static_cast<int>(rf_mhz) - 479;
+  if (lo < 0) {
+    lo = 0;
+  }
+  const int div = lo / 2;
+  const int N = div / 32;
+  const int A = div % 32;
+  return (static_cast<uint32_t>(N) << 7) | static_cast<uint32_t>(A);
+}
+
+static void vrxInit(uint8_t le) {
+  vrxWriteReg(le, 0x00, 0x00008);
+}
+
+static void vrxTuneHz(uint8_t le, uint64_t freq_hz) {
+  const uint32_t mhz = static_cast<uint32_t>(freq_hz / 1000000ULL);
+  vrxWriteReg(le, 0x01, synthWordFromMhz(mhz));
+}
+
+static uint16_t readRSSI(uint8_t pin) {
+  uint32_t sum = 0;
+  for (int i = 0; i < 6; i++) {
+    sum += analogRead(pin);
+    delayMicroseconds(200);
+  }
+  return static_cast<uint16_t>(sum / 6);
+}
 
 /* ===================== HELPERS ===================== */
 static void setLEDs(bool r, bool y, bool g) {
@@ -138,6 +214,20 @@ static void sendTelemetry() {
   Serial.print("\"timestamp_ms\":");
   Serial.print(ms);
   Serial.print(",\"sel\":1");
+  Serial.print(",\"vrx\":[");
+  for (int i = 0; i < 3; i++) {
+    Serial.print("{\"id\":");
+    Serial.print(vrx[i].id);
+    Serial.print(",\"freq_hz\":");
+    Serial.print(static_cast<unsigned long long>(vrx[i].freq_hz));
+    Serial.print(",\"rssi_raw\":");
+    Serial.print(vrx[i].rssi_raw);
+    Serial.print("}");
+    if (i < 2) {
+      Serial.print(",");
+    }
+  }
+  Serial.print("]");
   Serial.print(",\"led\":{\"r\":");
   Serial.print(led_r ? 1 : 0);
   Serial.print(",\"y\":");
@@ -290,6 +380,53 @@ static bool jsonFindIntField(const char *line, const char *key, int *out) {
   return true;
 }
 
+static bool jsonFindInt64Field(const char *line, const char *key, int64_t *out) {
+  if (!line || !key || !out) {
+    return false;
+  }
+
+  char pattern[32];
+  const size_t key_len = strlen(key);
+  if (key_len + 3 >= sizeof(pattern)) {
+    return false;
+  }
+  pattern[0] = '\"';
+  memcpy(pattern + 1, key, key_len);
+  pattern[key_len + 1] = '\"';
+  pattern[key_len + 2] = '\0';
+
+  const char *p = strstr(line, pattern);
+  if (!p) {
+    return false;
+  }
+  p += strlen(pattern);
+  while (*p && isspace(static_cast<unsigned char>(*p))) {
+    ++p;
+  }
+  if (*p != ':') {
+    return false;
+  }
+  ++p;
+  while (*p && isspace(static_cast<unsigned char>(*p))) {
+    ++p;
+  }
+  bool neg = false;
+  if (*p == '-') {
+    neg = true;
+    ++p;
+  }
+  if (!isdigit(static_cast<unsigned char>(*p))) {
+    return false;
+  }
+  int64_t value = 0;
+  while (isdigit(static_cast<unsigned char>(*p))) {
+    value = value * 10 + (*p - '0');
+    ++p;
+  }
+  *out = neg ? -value : value;
+  return true;
+}
+
 static void dispatchCommand(const char *id, const char *cmd, const char *line) {
   (void)line;
   if (strcmp(cmd, "GET_STATUS") == 0) {
@@ -315,8 +452,30 @@ static void dispatchCommand(const char *id, const char *cmd, const char *line) {
     sendCommandAck(id, cmd, true, "");
     return;
   }
-  if (strcmp(cmd, "SET_VRX_FREQ") == 0 ||
-      strcmp(cmd, "START_SCAN") == 0 ||
+  if (strcmp(cmd, "SET_VRX_FREQ") == 0) {
+    int vrx_id = 0;
+    int64_t freq_hz = 0;
+    const bool has_id = jsonFindIntField(line, "vrx_id", &vrx_id);
+    const bool has_freq = jsonFindInt64Field(line, "freq_hz", &freq_hz);
+    if (!has_id || !has_freq) {
+      sendCommandAck(id, cmd, false, "missing_args");
+      return;
+    }
+    if (vrx_id < 1 || vrx_id > 3) {
+      sendCommandAck(id, cmd, false, "vrx_id_oob");
+      return;
+    }
+    if (freq_hz < 1000000LL || freq_hz > 6500000000LL) {
+      sendCommandAck(id, cmd, false, "freq_oob");
+      return;
+    }
+    const int idx = vrx_id - 1;
+    vrx[idx].freq_hz = static_cast<uint64_t>(freq_hz);
+    vrxTuneHz(vrx[idx].lePin, vrx[idx].freq_hz);
+    sendCommandAck(id, cmd, true, "");
+    return;
+  }
+  if (strcmp(cmd, "START_SCAN") == 0 ||
       strcmp(cmd, "STOP_SCAN") == 0 ||
       strcmp(cmd, "LOCK_STRONGEST") == 0 ||
       strcmp(cmd, "VIDEO_SELECT") == 0) {
@@ -400,6 +559,20 @@ void setup() {
 
   setLEDs(false, false, true);
 
+  pinMode(PIN_VRX_DATA, OUTPUT);
+  pinMode(PIN_VRX_CLK, OUTPUT);
+  pinMode(PIN_VRX1_LE, OUTPUT);
+  pinMode(PIN_VRX2_LE, OUTPUT);
+  pinMode(PIN_VRX3_LE, OUTPUT);
+
+  digitalWrite(PIN_VRX_DATA, LOW);
+  digitalWrite(PIN_VRX_CLK, LOW);
+  digitalWrite(PIN_VRX1_LE, LOW);
+  digitalWrite(PIN_VRX2_LE, LOW);
+  digitalWrite(PIN_VRX3_LE, LOW);
+
+  analogReadResolution(12);
+
   Wire.begin(PIN_OLED_SDA, PIN_OLED_SCL);
   Wire.setClock(OLED_I2C_HZ);
   oled_ok = display.begin(0x3C);
@@ -408,6 +581,12 @@ void setup() {
   }
   if (oled_ok) {
     drawBootBanner();
+  }
+
+  for (int i = 0; i < 3; i++) {
+    vrxInit(vrx[i].lePin);
+    vrxTuneHz(vrx[i].lePin, vrx[i].freq_hz);
+    delay(5);
   }
 
   lastTelemetryMs = millis();
@@ -420,6 +599,13 @@ void loop() {
   if ((now - lastTelemetryMs) >= TELEMETRY_INTERVAL_MS) {
     lastTelemetryMs = now;
     sendTelemetry();
+  }
+
+  if ((now - lastRssiMs) >= RSSI_INTERVAL_MS) {
+    lastRssiMs = now;
+    for (int i = 0; i < 3; i++) {
+      vrx[i].rssi_raw = readRSSI(vrx[i].rssiPin);
+    }
   }
 
   serialPoll();

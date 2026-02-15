@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This firmware runs on the ESP32-S3-DevKitC-1-N8R2 board to provide the N-Defender panel hardware controller. It drives LEDs, renders a debug OLED screen, and streams telemetry over USB serial in newline-delimited JSON. It also accepts control commands and always replies with `command_ack`.
+This firmware runs on the ESP32-S3-DevKitC-1-N8R2 board to provide the N-Defender panel hardware controller. It drives LEDs, renders a debug OLED screen, controls VRX tuning, samples RSSI, and streams telemetry over USB serial in newline-delimited JSON. It also accepts control commands and always replies with `command_ack`.
 
 ## Board Selection and Arduino IDE Setup
 
@@ -64,15 +64,16 @@ Video switch placeholders (board-specific):
 ## How To Verify After Flashing
 
 1. Open Serial Monitor at 115200 baud.
-2. Expect a 1 Hz telemetry heartbeat.
+2. Expect a 1 Hz telemetry heartbeat with a `vrx` array.
 3. If the OLED is connected, it shows a boot banner and live status.
+4. Send a `SET_VRX_FREQ` command and confirm `command_ack` and telemetry updates.
 
 Example telemetry lines:
 
 ```json
-{"type":"telemetry","timestamp_ms":1000,"sel":1,"led":{"r":0,"y":0,"g":1},"sys":{"uptime_ms":1000,"heap":123456}}
-{"type":"telemetry","timestamp_ms":2000,"sel":1,"led":{"r":0,"y":0,"g":1},"sys":{"uptime_ms":2000,"heap":123456}}
-{"type":"telemetry","timestamp_ms":3000,"sel":1,"led":{"r":0,"y":0,"g":1},"sys":{"uptime_ms":3000,"heap":123456}}
+{"type":"telemetry","timestamp_ms":1000,"sel":1,"vrx":[{"id":1,"freq_hz":5740000000,"rssi_raw":219},{"id":2,"freq_hz":5800000000,"rssi_raw":140},{"id":3,"freq_hz":5860000000,"rssi_raw":98}],"led":{"r":0,"y":0,"g":1},"sys":{"uptime_ms":1000,"heap":123456}}
+{"type":"telemetry","timestamp_ms":2000,"sel":1,"vrx":[{"id":1,"freq_hz":5740000000,"rssi_raw":219},{"id":2,"freq_hz":5800000000,"rssi_raw":140},{"id":3,"freq_hz":5860000000,"rssi_raw":98}],"led":{"r":0,"y":0,"g":1},"sys":{"uptime_ms":2000,"heap":123456}}
+{"type":"telemetry","timestamp_ms":3000,"sel":1,"vrx":[{"id":1,"freq_hz":5740000000,"rssi_raw":219},{"id":2,"freq_hz":5800000000,"rssi_raw":140},{"id":3,"freq_hz":5860000000,"rssi_raw":98}],"led":{"r":0,"y":0,"g":1},"sys":{"uptime_ms":3000,"heap":123456}}
 ```
 
 ## Suggestions for Production Hardening (Planned)
@@ -82,3 +83,14 @@ Example telemetry lines:
 - Add RSSI sampling + VRX control + scan/lock engine.
 - Add video switch control with configurable GPIOs.
 - Extend OLED debug screen with mode + last command.
+ 
+## Troubleshooting
+
+If you do not see telemetry:
+- Confirm the correct serial port is selected.
+- Confirm baud rate is 115200.
+- Re-seat the USB cable and retry.
+
+If the OLED is blank:
+- Confirm SDA is on GPIO13 and SCL is on GPIO12.
+- Confirm I2C address (0x3C or 0x3D).

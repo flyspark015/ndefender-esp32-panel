@@ -6,6 +6,7 @@ ESP32 firmware that controls VRX modules, reads RSSI via ADC, drives LEDs, and r
 
 - `esp32_firmware/` Firmware package
   - `src/esp32.ino` Single-file Arduino sketch (complete firmware)
+  - `README.md` Firmware-specific setup and verification guide
 - `firmware.md` Firmware package guide and setup instructions
 
 ## Required Libraries
