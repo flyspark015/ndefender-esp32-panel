@@ -67,6 +67,8 @@ Video switch placeholders (board-specific):
 2. Expect a 1 Hz telemetry heartbeat with a `vrx` array.
 3. If the OLED is connected, it shows a boot banner and live status.
 4. Send a `SET_VRX_FREQ` command and confirm `command_ack` and telemetry updates.
+5. Send `START_SCAN` and confirm `vrx[].freq_hz` changes over time.
+6. Send `LOCK_STRONGEST` and confirm scanning stops and the best frequency is held.
 
 Example telemetry lines:
 
@@ -74,6 +76,14 @@ Example telemetry lines:
 {"type":"telemetry","timestamp_ms":1000,"sel":1,"vrx":[{"id":1,"freq_hz":5740000000,"rssi_raw":219},{"id":2,"freq_hz":5800000000,"rssi_raw":140},{"id":3,"freq_hz":5860000000,"rssi_raw":98}],"led":{"r":0,"y":0,"g":1},"sys":{"uptime_ms":1000,"heap":123456}}
 {"type":"telemetry","timestamp_ms":2000,"sel":1,"vrx":[{"id":1,"freq_hz":5740000000,"rssi_raw":219},{"id":2,"freq_hz":5800000000,"rssi_raw":140},{"id":3,"freq_hz":5860000000,"rssi_raw":98}],"led":{"r":0,"y":0,"g":1},"sys":{"uptime_ms":2000,"heap":123456}}
 {"type":"telemetry","timestamp_ms":3000,"sel":1,"vrx":[{"id":1,"freq_hz":5740000000,"rssi_raw":219},{"id":2,"freq_hz":5800000000,"rssi_raw":140},{"id":3,"freq_hz":5860000000,"rssi_raw":98}],"led":{"r":0,"y":0,"g":1},"sys":{"uptime_ms":3000,"heap":123456}}
+```
+
+Example scan commands:
+
+```json
+{"id":"10","cmd":"START_SCAN","args":{"dwell_ms":200,"step_hz":2000000,"start_hz":5645000000,"stop_hz":5865000000}}
+{"id":"11","cmd":"LOCK_STRONGEST","args":{}}
+{"id":"12","cmd":"STOP_SCAN","args":{}}
 ```
 
 ## Suggestions for Production Hardening (Planned)

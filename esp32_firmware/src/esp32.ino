@@ -82,13 +82,27 @@ struct VrxState {
   uint8_t rssiPin;
   uint64_t freq_hz;
   uint16_t rssi_raw;
+  uint16_t best_rssi;
+  uint64_t best_freq_hz;
 };
 
 static VrxState vrx[3] = {
-  {1, PIN_VRX1_LE, PIN_VRX1_RSSI, 5740000000ULL, 0},
-  {2, PIN_VRX2_LE, PIN_VRX2_RSSI, 5800000000ULL, 0},
-  {3, PIN_VRX3_LE, PIN_VRX3_RSSI, 5860000000ULL, 0},
+  {1, PIN_VRX1_LE, PIN_VRX1_RSSI, 5740000000ULL, 0, 0, 0},
+  {2, PIN_VRX2_LE, PIN_VRX2_RSSI, 5800000000ULL, 0, 0, 0},
+  {3, PIN_VRX3_LE, PIN_VRX3_RSSI, 5860000000ULL, 0, 0, 0},
 };
+
+struct ScanState {
+  bool active;
+  uint32_t dwell_ms;
+  uint64_t start_hz;
+  uint64_t stop_hz;
+  uint64_t step_hz;
+  uint64_t current_hz;
+  uint32_t last_step_ms;
+};
+
+static ScanState scan = {false, 200, 5645000000ULL, 5865000000ULL, 2000000ULL, 5645000000ULL, 0};
 
 static inline void clkPulse() {
   digitalWrite(PIN_VRX_CLK, HIGH);
@@ -144,6 +158,62 @@ static uint16_t readRSSI(uint8_t pin) {
     delayMicroseconds(200);
   }
   return static_cast<uint16_t>(sum / 6);
+}
+
+static void resetScanBest() {
+  for (int i = 0; i < 3; i++) {
+    vrx[i].best_rssi = 0;
+    vrx[i].best_freq_hz = vrx[i].freq_hz;
+  }
+}
+
+static void startScan(uint32_t dwell_ms, uint64_t step_hz, uint64_t start_hz, uint64_t stop_hz) {
+  scan.active = true;
+  scan.dwell_ms = dwell_ms;
+  scan.step_hz = step_hz;
+  scan.start_hz = start_hz;
+  scan.stop_hz = stop_hz;
+  scan.current_hz = start_hz;
+  scan.last_step_ms = millis();
+  resetScanBest();
+  for (int i = 0; i < 3; i++) {
+    vrx[i].freq_hz = scan.current_hz;
+    vrxTuneHz(vrx[i].lePin, vrx[i].freq_hz);
+  }
+}
+
+static void stopScan() {
+  scan.active = false;
+}
+
+static void scanTick() {
+  if (!scan.active) {
+    return;
+  }
+  const uint32_t now = millis();
+  if (now - scan.last_step_ms < scan.dwell_ms) {
+    return;
+  }
+
+  for (int i = 0; i < 3; i++) {
+    if (vrx[i].rssi_raw >= vrx[i].best_rssi) {
+      vrx[i].best_rssi = vrx[i].rssi_raw;
+      vrx[i].best_freq_hz = vrx[i].freq_hz;
+    }
+  }
+
+  uint64_t next_hz = scan.current_hz + scan.step_hz;
+  if (next_hz > scan.stop_hz) {
+    next_hz = scan.start_hz;
+    resetScanBest();
+  }
+  scan.current_hz = next_hz;
+  scan.last_step_ms = now;
+
+  for (int i = 0; i < 3; i++) {
+    vrx[i].freq_hz = scan.current_hz;
+    vrxTuneHz(vrx[i].lePin, vrx[i].freq_hz);
+  }
 }
 
 /* ===================== HELPERS ===================== */
@@ -475,10 +545,75 @@ static void dispatchCommand(const char *id, const char *cmd, const char *line) {
     sendCommandAck(id, cmd, true, "");
     return;
   }
-  if (strcmp(cmd, "START_SCAN") == 0 ||
-      strcmp(cmd, "STOP_SCAN") == 0 ||
-      strcmp(cmd, "LOCK_STRONGEST") == 0 ||
-      strcmp(cmd, "VIDEO_SELECT") == 0) {
+  if (strcmp(cmd, "START_SCAN") == 0) {
+    int dwell_ms = 0;
+    int64_t step_hz = 0;
+    int64_t start_hz = 0;
+    int64_t stop_hz = 0;
+    const bool has_dwell = jsonFindIntField(line, "dwell_ms", &dwell_ms);
+    const bool has_step = jsonFindInt64Field(line, "step_hz", &step_hz);
+    const bool has_start = jsonFindInt64Field(line, "start_hz", &start_hz);
+    const bool has_stop = jsonFindInt64Field(line, "stop_hz", &stop_hz);
+    if (!has_dwell || !has_step || !has_start || !has_stop) {
+      sendCommandAck(id, cmd, false, "missing_args");
+      return;
+    }
+    if (dwell_ms < 10 || dwell_ms > 5000) {
+      sendCommandAck(id, cmd, false, "dwell_oob");
+      return;
+    }
+    if (step_hz <= 0 || start_hz <= 0 || stop_hz <= 0 || start_hz >= stop_hz) {
+      sendCommandAck(id, cmd, false, "range_oob");
+      return;
+    }
+    startScan(static_cast<uint32_t>(dwell_ms),
+              static_cast<uint64_t>(step_hz),
+              static_cast<uint64_t>(start_hz),
+              static_cast<uint64_t>(stop_hz));
+    sendCommandAck(id, cmd, true, "");
+    return;
+  }
+  if (strcmp(cmd, "STOP_SCAN") == 0) {
+    stopScan();
+    sendCommandAck(id, cmd, true, "");
+    return;
+  }
+  if (strcmp(cmd, "LOCK_STRONGEST") == 0) {
+    int vrx_id = 0;
+    const bool has_id = jsonFindIntField(line, "vrx_id", &vrx_id);
+    bool any_locked = false;
+    if (has_id) {
+      if (vrx_id < 1 || vrx_id > 3) {
+        sendCommandAck(id, cmd, false, "vrx_id_oob");
+        return;
+      }
+      const int idx = vrx_id - 1;
+      if (vrx[idx].best_rssi == 0) {
+        sendCommandAck(id, cmd, false, "no_best");
+        return;
+      }
+      vrx[idx].freq_hz = vrx[idx].best_freq_hz;
+      vrxTuneHz(vrx[idx].lePin, vrx[idx].freq_hz);
+      any_locked = true;
+    } else {
+      for (int i = 0; i < 3; i++) {
+        if (vrx[i].best_rssi == 0) {
+          continue;
+        }
+        vrx[i].freq_hz = vrx[i].best_freq_hz;
+        vrxTuneHz(vrx[i].lePin, vrx[i].freq_hz);
+        any_locked = true;
+      }
+    }
+    stopScan();
+    if (!any_locked) {
+      sendCommandAck(id, cmd, false, "no_best");
+      return;
+    }
+    sendCommandAck(id, cmd, true, "");
+    return;
+  }
+  if (strcmp(cmd, "VIDEO_SELECT") == 0) {
     sendCommandAck(id, cmd, false, "not_implemented");
     return;
   }
@@ -607,6 +742,8 @@ void loop() {
       vrx[i].rssi_raw = readRSSI(vrx[i].rssiPin);
     }
   }
+
+  scanTick();
 
   serialPoll();
 
