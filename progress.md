@@ -48,6 +48,7 @@
 - 2026-02-15: System Controller Step 5 complete (systemd services manager + restart guard + /api/v1/services).
 - 2026-02-15: System Controller Step 6 complete (network manager + /api/v1/network).
 - 2026-02-15: System Controller Step 7 complete (audio manager + /api/v1/audio).
+- 2026-02-15: System Controller Step 8 complete (guarded reboot/shutdown endpoints).
 
 ## Verification Results
 - Build (pio run via .venv): SUCCESS
